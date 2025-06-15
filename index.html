@@ -608,11 +608,27 @@
         function speakText(text) {
             if (!speechEnabled || !window.speechSynthesis) return;
             
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.9;
-            utterance.pitch = 1;
-            utterance.volume = 0.8;
-            window.speechSynthesis.speak(utterance);
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            // Small delay to ensure cancellation is processed
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                utterance.volume = 0.8;
+                
+                // Handle browser-specific issues
+                utterance.onstart = () => {
+                    console.log('Speech started:', text);
+                };
+                
+                utterance.onerror = (event) => {
+                    console.error('Speech error:', event.error);
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            }, 100);
         }
 
         function updateDisplay() {
@@ -749,9 +765,8 @@
 
         function handleAudioCues() {
             // Initial workout announcement
-            if (timeRemaining === 3 && isCountdown && currentExercise === 0 && currentSet === 1) {
+            if (timeRemaining === 2 && isCountdown && currentExercise === 0 && currentSet === 1) {
                 speakText(`Starting workout. First exercise: ${exercises[currentExercise]}`);
-                playBeep(800, 150, 0.3);
                 return;
             }
             
@@ -771,16 +786,19 @@
                 playGong();
             }
             
-            // Rest period announcements
-            if (timeRemaining === 15 && !isWorkPeriod && !isCountdown) {
+            // Rest period announcements - trigger earlier to avoid conflicts
+            if (timeRemaining === 14 && !isWorkPeriod && !isCountdown) {
                 playBeep(600, 150, 0.3);
                 
-                const nextExerciseIndex = currentExercise + 1;
-                if (nextExerciseIndex < exercises.length) {
-                    speakText(`Next exercise: ${exercises[nextExerciseIndex]}`);
-                } else if (currentSet < TOTAL_SETS) {
-                    speakText(`Set ${currentSet} complete. Starting set ${currentSet + 1}: ${exercises[0]}`);
-                }
+                // Delay speech announcement slightly
+                setTimeout(() => {
+                    const nextExerciseIndex = currentExercise + 1;
+                    if (nextExerciseIndex < exercises.length) {
+                        speakText(`Next exercise: ${exercises[nextExerciseIndex]}`);
+                    } else if (currentSet < TOTAL_SETS) {
+                        speakText(`Set ${currentSet} complete. Starting set ${currentSet + 1}: ${exercises[0]}`);
+                    }
+                }, 200);
             }
         }
 
@@ -920,10 +938,37 @@
             }
         }
 
+        // Initialize speech synthesis
+        function initSpeechSynthesis() {
+            if (window.speechSynthesis) {
+                // Some browsers need voices to be loaded first
+                if (speechSynthesis.getVoices().length === 0) {
+                    speechSynthesis.addEventListener('voiceschanged', function() {
+                        console.log('Voices loaded:', speechSynthesis.getVoices().length);
+                    });
+                }
+                
+                // Wake up speech synthesis in some browsers
+                speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+                speechSynthesis.cancel();
+            }
+        }
+
+        // Test speech function
+        function testSpeech() {
+            if (speechEnabled) {
+                speakText('Speech test successful');
+            }
+        }
+
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
             updateDisplay();
             renderExerciseList();
+            initSpeechSynthesis();
+            
+            // Add a test speech button in development
+            console.log('Workout Timer initialized. Speech synthesis available:', !!window.speechSynthesis);
         });
 
         // Handle visibility change to pause timer when tab is not active
