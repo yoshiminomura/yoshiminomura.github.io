@@ -134,16 +134,15 @@
             width: 200px;
             height: 200px;
             margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         .progress-ring {
-            transform: rotate(-90deg);
             position: absolute;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
         }
 
         .progress-ring-bg {
@@ -160,8 +159,10 @@
         }
 
         .time-text {
-            position: relative;
-            z-index: 10;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             font-size: 3rem;
             font-weight: 700;
             color: #2d3748;
@@ -169,6 +170,8 @@
             line-height: 1;
             margin: 0;
             padding: 0;
+            z-index: 10;
+            pointer-events: none;
         }
 
         .progress-bar {
@@ -415,6 +418,11 @@
                 height: 160px;
             }
 
+            .progress-ring {
+                width: 160px;
+                height: 160px;
+            }
+
             .time-text {
                 font-size: 2.25rem;
             }
@@ -485,6 +493,11 @@
             }
 
             .circular-progress {
+                width: 140px;
+                height: 140px;
+            }
+
+            .progress-ring {
                 width: 140px;
                 height: 140px;
             }
@@ -565,7 +578,7 @@
             <!-- Timer Display -->
             <div class="timer-display">
                 <div class="circular-progress">
-                    <svg class="progress-ring" width="200" height="200">
+                    <svg class="progress-ring" width="200" height="200" viewBox="0 0 200 200">
                         <circle class="progress-ring-bg" cx="100" cy="100" r="90"></circle>
                         <circle class="progress-ring-fill" cx="100" cy="100" r="90" 
                                 stroke="#3b82f6" stroke-dasharray="565.48" stroke-dashoffset="0" id="progressCircle"></circle>
