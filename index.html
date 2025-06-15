@@ -497,6 +497,9 @@
             <button class="settings-btn active" id="speechBtn" onclick="toggleSpeech()">
                 🗣️ Voice
             </button>
+            <button class="settings-btn" onclick="testSpeech()">
+                🧪 Test Voice
+            </button>
             <button class="settings-btn" onclick="toggleExerciseList()">
                 📝 Edit Exercises
             </button>
@@ -605,30 +608,82 @@
             });
         }
 
+        let speechInitialized = false;
+        
+        function initializeSpeechForMobile() {
+            if (!speechInitialized && window.speechSynthesis) {
+                // Create and immediately cancel a short utterance to initialize
+                const initUtterance = new SpeechSynthesisUtterance(' ');
+                initUtterance.volume = 0;
+                window.speechSynthesis.speak(initUtterance);
+                window.speechSynthesis.cancel();
+                speechInitialized = true;
+                console.log('Speech synthesis initialized for mobile');
+            }
+        }
+
         function speakText(text) {
-            if (!speechEnabled || !window.speechSynthesis) return;
+            if (!speechEnabled || !window.speechSynthesis) {
+                console.log('Speech disabled or not supported');
+                return;
+            }
+            
+            // Initialize speech on first use (important for mobile)
+            if (!speechInitialized) {
+                initializeSpeechForMobile();
+            }
             
             // Cancel any ongoing speech
             window.speechSynthesis.cancel();
             
-            // Small delay to ensure cancellation is processed
+            // Wait a bit longer for mobile browsers
             setTimeout(() => {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.9;
-                utterance.pitch = 1;
-                utterance.volume = 0.8;
-                
-                // Handle browser-specific issues
-                utterance.onstart = () => {
-                    console.log('Speech started:', text);
-                };
-                
-                utterance.onerror = (event) => {
-                    console.error('Speech error:', event.error);
-                };
-                
-                window.speechSynthesis.speak(utterance);
-            }, 100);
+                try {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.8; // Slower for mobile
+                    utterance.pitch = 1;
+                    utterance.volume = 1.0; // Full volume for mobile
+                    
+                    // Use default voice or first available voice
+                    const voices = window.speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        // Try to find an English voice
+                        const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
+                        if (englishVoice) {
+                            utterance.voice = englishVoice;
+                        } else {
+                            utterance.voice = voices[0];
+                        }
+                    }
+                    
+                    utterance.onstart = () => {
+                        console.log('Speech started:', text);
+                    };
+                    
+                    utterance.onend = () => {
+                        console.log('Speech ended:', text);
+                    };
+                    
+                    utterance.onerror = (event) => {
+                        console.error('Speech error:', event.error, 'for text:', text);
+                    };
+                    
+                    console.log('Attempting to speak:', text);
+                    window.speechSynthesis.speak(utterance);
+                    
+                    // Fallback for some mobile browsers
+                    setTimeout(() => {
+                        if (window.speechSynthesis.speaking) {
+                            console.log('Speech is working');
+                        } else {
+                            console.warn('Speech may not be working on this device');
+                        }
+                    }, 500);
+                    
+                } catch (error) {
+                    console.error('Speech synthesis error:', error);
+                }
+            }, 200);
         }
 
         function updateDisplay() {
@@ -808,9 +863,10 @@
             isRunning = !isRunning;
             
             if (isRunning) {
-                timer = setInterval(tick, 1000);
-                // Enable audio context on user interaction
+                // Initialize audio and speech on user interaction (required for mobile)
                 initAudio();
+                initializeSpeechForMobile();
+                timer = setInterval(tick, 1000);
             } else {
                 clearInterval(timer);
             }
@@ -956,9 +1012,32 @@
 
         // Test speech function
         function testSpeech() {
-            if (speechEnabled) {
-                speakText('Speech test successful');
+            if (!speechEnabled) {
+                alert('Voice announcements are disabled. Please enable them first.');
+                return;
             }
+            
+            if (!window.speechSynthesis) {
+                alert('Speech synthesis is not supported on this device/browser.');
+                return;
+            }
+            
+            // Force initialization
+            initializeSpeechForMobile();
+            
+            // Test with a clear message
+            speakText('Voice test: Next exercise is squats');
+            
+            // Visual feedback
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '🔄 Testing...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 3000);
         }
 
         // Initialize the app
