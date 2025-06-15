@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        .card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .completion-card {
+            background: #f0fff4;
+            border-color: #9ae6b4;
+        }
+
+        .exercise-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .badge-purple {
+            background: #e9d8fd;
+            color: #6b46c1;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .exercise-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .phase-badge {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .phase-countdown {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .phase-work {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .phase-rest {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .timer-display {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .circular-progress {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: #e2e8f0;
+            stroke-width: 10;
+        }
+
+        .progress-ring-fill {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s ease;
+        }
+
+        .time-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-orange {
+            background: #f97316;
+            color: white;
+        }
+
+        .btn-orange:hover {
+            background: #ea580c;
+        }
+
+        .btn-secondary {
+            background: #94a3b8;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #64748b;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .next-exercise {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .settings-btn {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4a5568;
+            transition: all 0.2s ease;
+        }
+
+        .settings-btn:hover {
+            border-color: #cbd5e0;
+            background: #f7fafc;
+        }
+
+        .settings-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .exercise-list {
+            margin-top: 20px;
+        }
+
+        .exercise-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .exercise-item span {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .exercise-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            background: #f1f5f9;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+
+        .btn-small:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-small.edit:hover {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .btn-small.delete:hover {
+            background: #fecaca;
+            color: #dc2626;
+        }
+
+        .add-exercise {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .input:focus {
+            border-color: #3b82f6;
+        }
+
+        .completion-content {
+            text-align: center;
+        }
+
+        .trophy {
+            font-size: 4rem;
+            color: #fbbf24;
+            margin-bottom: 15px;
+        }
+
+        .completion-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 10px;
+        }
+
+        .completion-text {
+            color: #16a34a;
+            margin-bottom: 25px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .circular-progress {
+                width: 160px;
+                height: 160px;
+            }
+
+            .time-text {
+                font-size: 2.5rem;
+            }
+
+            .badges {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .controls {
+                gap: 10px;
+            }
+
+            .btn {
+                width: 56px;
+                height: 56px;
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏋️ Workout Timer</h1>
+            <p>45 seconds work • 15 seconds rest • 2 sets</p>
+        </div>
+
+        <!-- Completion Card -->
+        <div id="completionCard" class="card completion-card hidden">
+            <div class="completion-content">
+                <div class="trophy">🏆</div>
+                <h3 class="completion-title">Workout Complete!</h3>
+                <p class="completion-text">Great job! You've completed 2 sets of all 6 exercises.</p>
+                <button class="btn btn-success" onclick="resetWorkout()">
+                    ↻ Start New Workout
+                </button>
+            </div>
+        </div>
+
+        <!-- Current Exercise Display -->
+        <div class="card">
+            <div class="exercise-display">
+                <div class="badges">
+                    <span class="badge badge-purple" id="setIndicator">Set 1 of 2</span>
+                    <span class="badge badge-blue" id="exerciseIndicator">Exercise 1 of 6</span>
+                </div>
+                <h2 class="exercise-name" id="exerciseName">Squats</h2>
+                
+                <!-- Phase Indicator -->
+                <div class="phase-indicator">
+                    <div class="phase-badge phase-countdown" id="phaseIndicator">
+                        ⏱️ Get Ready
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timer Display -->
+            <div class="timer-display">
+                <div class="circular-progress">
+                    <svg class="progress-ring" width="200" height="200">
+                        <circle class="progress-ring-bg" cx="100" cy="100" r="90"></circle>
+                        <circle class="progress-ring-fill" cx="100" cy="100" r="90" 
+                                stroke="#3b82f6" stroke-dasharray="565.48" stroke-dashoffset="0" id="progressCircle"></circle>
+                    </svg>
+                    <div class="time-text" id="timeDisplay">3</div>
+                </div>
+                
+                <!-- Overall Progress -->
+                <div class="progress-bar">
+                    <div class="progress-fill" id="overallProgress" style="width: 0%"></div>
+                </div>
+                <div style="text-align: center; font-size: 0.875rem; color: #64748b; margin-top: 5px;">
+                    Overall Progress
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn btn-primary" id="playPauseBtn" onclick="toggleTimer()">▶️</button>
+                <button class="btn btn-orange" id="skipBtn" onclick="skipToNext()" disabled>⏭️</button>
+                <button class="btn btn-secondary" onclick="resetWorkout()">↻</button>
+            </div>
+
+            <!-- Next Exercise Preview -->
+            <div class="next-exercise" id="nextExercise">
+                <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 5px;">Next Exercise</div>
+                <div style="font-weight: 600; color: #2d3748;" id="nextExerciseName">Knee push ups</div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="settings-bar">
+            <button class="settings-btn active" id="soundBtn" onclick="toggleSound()">
+                🔊 Sound
+            </button>
+            <button class="settings-btn active" id="speechBtn" onclick="toggleSpeech()">
+                🗣️ Voice
+            </button>
+            <button class="settings-btn" onclick="toggleExerciseList()">
+                📝 Edit Exercises
+            </button>
+        </div>
+
+        <!-- Exercise List -->
+        <div class="card hidden" id="exerciseListCard">
+            <h3 style="margin-bottom: 20px; color: #2d3748; font-weight: 600;">Exercise List</h3>
+            <div class="exercise-list" id="exerciseList"></div>
+            <div class="add-exercise">
+                <input type="text" class="input" id="newExerciseInput" placeholder="Add new exercise..." 
+                       onkeypress="handleAddExercise(event)">
+                <button class="btn-small" onclick="addExercise()" style="width: auto; padding: 0 15px; background: #3b82f6; color: white;">
+                    ➕
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Workout Timer State
+        let currentExercise = 0;
+        let currentSet = 1;
+        let timeRemaining = 3;
+        let isRunning = false;
+        let isWorkPeriod = false;
+        let isCountdown = true;
+        let isComplete = false;
+        let timer = null;
+        
+        // Settings
+        let soundEnabled = true;
+        let speechEnabled = true;
+        
+        // Constants
+        const WORK_TIME = 45;
+        const REST_TIME = 15;
+        const COUNTDOWN_TIME = 3;
+        const TOTAL_EXERCISES = 6;
+        const TOTAL_SETS = 2;
+        
+        // Default exercises
+        let exercises = [
+            'Squats',
+            'Knee push ups',
+            'Seated leg extensions',
+            'Standing calf raises',
+            'Kettlebell deadlifts',
+            'Plank'
+        ];
+
+        // Audio Context for beeps and sounds
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBeep(frequency = 800, duration = 150, volume = 0.3) {
+            if (!soundEnabled) return;
+            
+            initAudio();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        function playGong() {
+            if (!soundEnabled) return;
+            
+            initAudio();
+            // Create a more complex gong-like sound
+            const frequencies = [200, 300, 400, 500];
+            frequencies.forEach((freq, index) => {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.8);
+                }, index * 50);
+            });
+        }
+
+        function speakText(text) {
+            if (!speechEnabled || !window.speechSynthesis) return;
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            utterance.volume = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function updateDisplay() {
+            // Update exercise name and indicators
+            document.getElementById('exerciseName').textContent = exercises[currentExercise];
+            document.getElementById('setIndicator').textContent = `Set ${currentSet} of ${TOTAL_SETS}`;
+            document.getElementById('exerciseIndicator').textContent = `Exercise ${currentExercise + 1} of ${TOTAL_EXERCISES}`;
+            
+            // Update time display
+            document.getElementById('timeDisplay').textContent = timeRemaining;
+            
+            // Update phase indicator
+            const phaseIndicator = document.getElementById('phaseIndicator');
+            if (isCountdown) {
+                phaseIndicator.className = 'phase-badge phase-countdown';
+                phaseIndicator.innerHTML = '⏱️ Get Ready';
+            } else if (isWorkPeriod) {
+                phaseIndicator.className = 'phase-badge phase-work';
+                phaseIndicator.innerHTML = '🔥 Work';
+            } else {
+                phaseIndicator.className = 'phase-badge phase-rest';
+                phaseIndicator.innerHTML = '🍃 Rest';
+            }
+            
+            // Update circular progress
+            updateCircularProgress();
+            
+            // Update overall progress
+            const totalProgress = (((currentSet - 1) * TOTAL_EXERCISES + currentExercise) * 2 + (isWorkPeriod ? 0 : 1)) / (TOTAL_EXERCISES * TOTAL_SETS * 2) * 100;
+            document.getElementById('overallProgress').style.width = `${totalProgress}%`;
+            
+            // Update next exercise
+            updateNextExercise();
+            
+            // Update completion state
+            document.getElementById('completionCard').classList.toggle('hidden', !isComplete);
+            
+            // Update controls
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            playPauseBtn.textContent = isRunning ? '⏸️' : '▶️';
+            document.getElementById('skipBtn').disabled = isComplete || !isRunning;
+        }
+
+        function updateCircularProgress() {
+            const circle = document.getElementById('progressCircle');
+            const radius = 90;
+            const circumference = 2 * Math.PI * radius;
+            
+            let maxTime, progress;
+            if (isCountdown) {
+                maxTime = COUNTDOWN_TIME;
+                progress = (COUNTDOWN_TIME - timeRemaining) / COUNTDOWN_TIME;
+                circle.style.stroke = '#fbbf24'; // Yellow for countdown
+            } else if (isWorkPeriod) {
+                maxTime = WORK_TIME;
+                progress = (WORK_TIME - timeRemaining) / WORK_TIME;
+                circle.style.stroke = '#10b981'; // Green for work
+            } else {
+                maxTime = REST_TIME;
+                progress = (REST_TIME - timeRemaining) / REST_TIME;
+                circle.style.stroke = '#3b82f6'; // Blue for rest
+            }
+            
+            const offset = circumference - (progress * circumference);
+            circle.style.strokeDashoffset = offset;
+        }
+
+        function updateNextExercise() {
+            const nextExerciseDiv = document.getElementById('nextExercise');
+            const nextExerciseName = document.getElementById('nextExerciseName');
+            
+            if (isComplete) {
+                nextExerciseDiv.classList.add('hidden');
+                return;
+            }
+            
+            let nextExerciseIndex = currentExercise + 1;
+            let nextSetNum = currentSet;
+            
+            if (nextExerciseIndex >= TOTAL_EXERCISES) {
+                if (currentSet < TOTAL_SETS) {
+                    nextExerciseIndex = 0;
+                    nextSetNum = currentSet + 1;
+                } else {
+                    nextExerciseDiv.classList.add('hidden');
+                    return;
+                }
+            }
+            
+            nextExerciseDiv.classList.remove('hidden');
+            const prefix = nextSetNum > currentSet ? `Set ${nextSetNum}: ` : '';
+            nextExerciseName.textContent = `${prefix}${exercises[nextExerciseIndex]}`;
+        }
+
+        function tick() {
+            if (timeRemaining <= 1) {
+                // Handle phase transitions
+                if (isCountdown) {
+                    // Move from countdown to work
+                    isCountdown = false;
+                    isWorkPeriod = true;
+                    timeRemaining = WORK_TIME;
+                } else if (isWorkPeriod) {
+                    // Move from work to rest
+                    isWorkPeriod = false;
+                    timeRemaining = REST_TIME;
+                } else {
+                    // Move to next exercise or set
+                    currentExercise++;
+                    if (currentExercise >= TOTAL_EXERCISES) {
+                        if (currentSet >= TOTAL_SETS) {
+                            // Workout complete
+                            completeWorkout();
+                            return;
+                        } else {
+                            // Move to next set
+                            currentSet++;
+                            currentExercise = 0;
+                        }
+                    }
+                    
+                    // Start countdown for next exercise
+                    isCountdown = true;
+                    isWorkPeriod = false;
+                    timeRemaining = COUNTDOWN_TIME;
+                }
+            } else {
+                timeRemaining--;
+            }
+            
+            handleAudioCues();
+            updateDisplay();
+        }
+
+        function handleAudioCues() {
+            // Initial workout announcement
+            if (timeRemaining === 3 && isCountdown && currentExercise === 0 && currentSet === 1) {
+                speakText(`Starting workout. First exercise: ${exercises[currentExercise]}`);
+                playBeep(800, 150, 0.3);
+                return;
+            }
+            
+            // Countdown beeps
+            if (isCountdown && timeRemaining <= 3 && timeRemaining > 0) {
+                const frequency = timeRemaining === 3 ? 800 : timeRemaining === 2 ? 900 : 1000;
+                playBeep(frequency, 150, 0.3);
+            }
+            
+            // Start of work period beep
+            if (timeRemaining === WORK_TIME && isWorkPeriod) {
+                playBeep(1200, 300, 0.7);
+            }
+            
+            // End of work period gong
+            if (timeRemaining === 1 && isWorkPeriod) {
+                playGong();
+            }
+            
+            // Rest period announcements
+            if (timeRemaining === 15 && !isWorkPeriod && !isCountdown) {
+                playBeep(600, 150, 0.3);
+                
+                const nextExerciseIndex = currentExercise + 1;
+                if (nextExerciseIndex < exercises.length) {
+                    speakText(`Next exercise: ${exercises[nextExerciseIndex]}`);
+                } else if (currentSet < TOTAL_SETS) {
+                    speakText(`Set ${currentSet} complete. Starting set ${currentSet + 1}: ${exercises[0]}`);
+                }
+            }
+        }
+
+        function toggleTimer() {
+            if (isComplete) return;
+            
+            isRunning = !isRunning;
+            
+            if (isRunning) {
+                timer = setInterval(tick, 1000);
+                // Enable audio context on user interaction
+                initAudio();
+            } else {
+                clearInterval(timer);
+            }
+            
+            updateDisplay();
+        }
+
+        function skipToNext() {
+            if (isComplete || !isRunning) return;
+            
+            currentExercise++;
+            if (currentExercise >= TOTAL_EXERCISES) {
+                if (currentSet >= TOTAL_SETS) {
+                    completeWorkout();
+                    return;
+                } else {
+                    currentSet++;
+                    currentExercise = 0;
+                }
+            }
+            
+            isCountdown = true;
+            isWorkPeriod = false;
+            timeRemaining = COUNTDOWN_TIME;
+            updateDisplay();
+        }
+
+        function resetWorkout() {
+            clearInterval(timer);
+            currentExercise = 0;
+            currentSet = 1;
+            timeRemaining = COUNTDOWN_TIME;
+            isRunning = false;
+            isWorkPeriod = false;
+            isCountdown = true;
+            isComplete = false;
+            updateDisplay();
+        }
+
+        function completeWorkout() {
+            clearInterval(timer);
+            isRunning = false;
+            isComplete = true;
+            playBeep(1200, 500, 0.8);
+            speakText('Workout complete! Great job!');
+            updateDisplay();
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            btn.classList.toggle('active', soundEnabled);
+            btn.innerHTML = soundEnabled ? '🔊 Sound' : '🔇 Sound';
+        }
+
+        function toggleSpeech() {
+            speechEnabled = !speechEnabled;
+            const btn = document.getElementById('speechBtn');
+            btn.classList.toggle('active', speechEnabled);
+            btn.innerHTML = speechEnabled ? '🗣️ Voice' : '🤐 Voice';
+        }
+
+        function toggleExerciseList() {
+            const card = document.getElementById('exerciseListCard');
+            card.classList.toggle('hidden');
+            renderExerciseList();
+        }
+
+        function renderExerciseList() {
+            const list = document.getElementById('exerciseList');
+            list.innerHTML = '';
+            
+            exercises.forEach((exercise, index) => {
+                const item = document.createElement('div');
+                item.className = 'exercise-item';
+                item.innerHTML = `
+                    <span>${exercise}</span>
+                    <div class="exercise-actions">
+                        <button class="btn-small edit" onclick="editExercise(${index})" title="Edit">✏️</button>
+                        <button class="btn-small delete" onclick="deleteExercise(${index})" title="Delete">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function addExercise() {
+            const input = document.getElementById('newExerciseInput');
+            const name = input.value.trim();
+            
+            if (name) {
+                exercises.push(name);
+                input.value = '';
+                renderExerciseList();
+                updateDisplay();
+            }
+        }
+
+        function handleAddExercise(event) {
+            if (event.key === 'Enter') {
+                addExercise();
+            }
+        }
+
+        function editExercise(index) {
+            const newName = prompt('Edit exercise name:', exercises[index]);
+            if (newName && newName.trim()) {
+                exercises[index] = newName.trim();
+                renderExerciseList();
+                updateDisplay();
+            }
+        }
+
+        function deleteExercise(index) {
+            if (exercises.length > 1 && confirm('Delete this exercise?')) {
+                exercises.splice(index, 1);
+                
+                // Adjust current exercise index if needed
+                if (currentExercise >= exercises.length) {
+                    currentExercise = exercises.length - 1;
+                }
+                
+                renderExerciseList();
+                updateDisplay();
+            }
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDisplay();
+            renderExerciseList();
+        });
+
+        // Handle visibility change to pause timer when tab is not active
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && isRunning) {
+                // Optional: pause when tab becomes hidden
+                // toggleTimer();
+            }
+        });
+    </script>
+</body>
+</html>
