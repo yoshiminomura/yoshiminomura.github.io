@@ -620,6 +620,9 @@
             <button class="settings-btn" onclick="testSpeech()">
                 🧪 Test Voice
             </button>
+            <button class="settings-btn" onclick="toggleLanguage()">
+                🌐 Language
+            </button>
             <button class="settings-btn" onclick="toggleExerciseList()">
                 📝 Edit Exercises
             </button>
@@ -653,6 +656,7 @@
         // Settings
         let soundEnabled = true;
         let speechEnabled = true;
+        let currentLanguage = 'en';
         
         // Constants
         const WORK_TIME = 45;
@@ -661,15 +665,96 @@
         const TOTAL_EXERCISES = 6;
         const TOTAL_SETS = 2;
         
+        // Translations
+        const translations = {
+            en: {
+                title: "🏋️ Workout Timer",
+                subtitle: "45 seconds work • 15 seconds rest • 2 sets",
+                workoutComplete: "Workout Complete!",
+                workoutCompleteText: "Great job! You've completed 2 sets of all 6 exercises.",
+                startNewWorkout: "Start New Workout",
+                set: "Set",
+                of: "of",
+                exercise: "Exercise",
+                getReady: "⏱️ Get Ready",
+                work: "🔥 Work",
+                rest: "🍃 Rest",
+                overallProgress: "Overall Progress",
+                nextExercise: "Next Exercise",
+                sound: "🔊 Sound",
+                voice: "🗣️ Voice",
+                testVoice: "🧪 Test Voice",
+                editExercises: "📝 Edit Exercises",
+                language: "🌐 Language",
+                exerciseList: "Exercise List",
+                addNewExercise: "Add new exercise...",
+                exercises: [
+                    'Squats',
+                    'Knee push ups',
+                    'Seated leg extensions',
+                    'Standing calf raises',
+                    'Kettlebell deadlifts',
+                    'Plank'
+                ],
+                speech: {
+                    startingWorkout: "Starting workout. First exercise: ",
+                    nextExercise: "Next exercise: ",
+                    setComplete: "Set {0} complete. Starting set {1}: ",
+                    voiceTest: "Voice test: Next exercise is squats",
+                    workoutComplete: "Workout complete! Great job!"
+                },
+                alerts: {
+                    voiceDisabled: "Voice announcements are disabled. Please enable them first.",
+                    speechNotSupported: "Speech synthesis is not supported on this device/browser.",
+                    deleteExercise: "Delete this exercise?"
+                }
+            },
+            ja: {
+                title: "🏋️ ワークアウトタイマー",
+                subtitle: "45秒運動 • 15秒休憩 • 2セット",
+                workoutComplete: "ワークアウト完了！",
+                workoutCompleteText: "お疲れ様でした！6種目を2セット完了しました。",
+                startNewWorkout: "新しいワークアウトを開始",
+                set: "セット",
+                of: "の",
+                exercise: "種目",
+                getReady: "⏱️ 準備",
+                work: "🔥 運動",
+                rest: "🍃 休憩",
+                overallProgress: "全体の進捗",
+                nextExercise: "次の種目",
+                sound: "🔊 音声",
+                voice: "🗣️ 音声案内",
+                testVoice: "🧪 音声テスト",
+                editExercises: "📝 種目編集",
+                language: "🌐 言語",
+                exerciseList: "種目リスト",
+                addNewExercise: "新しい種目を追加...",
+                exercises: [
+                    'スクワット',
+                    '膝つき腕立て伏せ',
+                    '座位レッグエクステンション',
+                    '立位カーフレイズ',
+                    'ケトルベルデッドリフト',
+                    'プランク'
+                ],
+                speech: {
+                    startingWorkout: "ワークアウトを開始します。最初の種目は",
+                    nextExercise: "次の種目は",
+                    setComplete: "{0}セット目完了。{1}セット目を開始します。",
+                    voiceTest: "音声テスト：次の種目はスクワットです",
+                    workoutComplete: "ワークアウト完了！お疲れ様でした！"
+                },
+                alerts: {
+                    voiceDisabled: "音声案内が無効になっています。まず有効にしてください。",
+                    speechNotSupported: "このデバイス/ブラウザでは音声合成がサポートされていません。",
+                    deleteExercise: "この種目を削除しますか？"
+                }
+            }
+        };
+
         // Default exercises
-        let exercises = [
-            'Squats',
-            'Knee push ups',
-            'Seated leg extensions',
-            'Standing calf raises',
-            'Kettlebell deadlifts',
-            'Plank'
-        ];
+        let exercises = [...translations[currentLanguage].exercises];
 
         // Audio Context for beeps and sounds
         let audioContext = null;
@@ -764,16 +849,26 @@
                     utterance.pitch = 1;
                     utterance.volume = 1.0; // Full volume for mobile
                     
-                    // Use default voice or first available voice
+                    // Use voice based on current language
                     const voices = window.speechSynthesis.getVoices();
                     if (voices.length > 0) {
-                        // Try to find an English voice
-                        const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
-                        if (englishVoice) {
-                            utterance.voice = englishVoice;
+                        let targetVoice;
+                        if (currentLanguage === 'ja') {
+                            // Try to find a Japanese voice
+                            targetVoice = voices.find(voice => voice.lang.startsWith('ja'));
+                        } else {
+                            // Try to find an English voice
+                            targetVoice = voices.find(voice => voice.lang.startsWith('en'));
+                        }
+                        
+                        if (targetVoice) {
+                            utterance.voice = targetVoice;
                         } else {
                             utterance.voice = voices[0];
                         }
+                        
+                        // Set language for better pronunciation
+                        utterance.lang = currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
                     }
                     
                     utterance.onstart = () => {
@@ -807,10 +902,12 @@
         }
 
         function updateDisplay() {
+            const t = translations[currentLanguage];
+            
             // Update exercise name and indicators
             document.getElementById('exerciseName').textContent = exercises[currentExercise];
-            document.getElementById('setIndicator').textContent = `Set ${currentSet} of ${TOTAL_SETS}`;
-            document.getElementById('exerciseIndicator').textContent = `Exercise ${currentExercise + 1} of ${TOTAL_EXERCISES}`;
+            document.getElementById('setIndicator').textContent = `${t.set} ${currentSet} ${t.of} ${TOTAL_SETS}`;
+            document.getElementById('exerciseIndicator').textContent = `${t.exercise} ${currentExercise + 1} ${t.of} ${TOTAL_EXERCISES}`;
             
             // Update time display
             document.getElementById('timeDisplay').textContent = timeRemaining;
@@ -819,13 +916,13 @@
             const phaseIndicator = document.getElementById('phaseIndicator');
             if (isCountdown) {
                 phaseIndicator.className = 'phase-badge phase-countdown';
-                phaseIndicator.innerHTML = '⏱️ Get Ready';
+                phaseIndicator.innerHTML = t.getReady;
             } else if (isWorkPeriod) {
                 phaseIndicator.className = 'phase-badge phase-work';
-                phaseIndicator.innerHTML = '🔥 Work';
+                phaseIndicator.innerHTML = t.work;
             } else {
                 phaseIndicator.className = 'phase-badge phase-rest';
-                phaseIndicator.innerHTML = '🍃 Rest';
+                phaseIndicator.innerHTML = t.rest;
             }
             
             // Update circular progress
@@ -872,6 +969,7 @@
         }
 
         function updateNextExercise() {
+            const t = translations[currentLanguage];
             const nextExerciseDiv = document.getElementById('nextExercise');
             const nextExerciseName = document.getElementById('nextExerciseName');
             
@@ -894,7 +992,7 @@
             }
             
             nextExerciseDiv.classList.remove('hidden');
-            const prefix = nextSetNum > currentSet ? `Set ${nextSetNum}: ` : '';
+            const prefix = nextSetNum > currentSet ? `${t.set} ${nextSetNum}: ` : '';
             nextExerciseName.textContent = `${prefix}${exercises[nextExerciseIndex]}`;
         }
 
@@ -939,9 +1037,11 @@
         }
 
         function handleAudioCues() {
+            const t = translations[currentLanguage];
+            
             // Initial workout announcement
             if (timeRemaining === 2 && isCountdown && currentExercise === 0 && currentSet === 1) {
-                speakText(`Starting workout. First exercise: ${exercises[currentExercise]}`);
+                speakText(`${t.speech.startingWorkout}${exercises[currentExercise]}`);
                 return;
             }
             
@@ -969,9 +1069,10 @@
                 setTimeout(() => {
                     const nextExerciseIndex = currentExercise + 1;
                     if (nextExerciseIndex < exercises.length) {
-                        speakText(`Next exercise: ${exercises[nextExerciseIndex]}`);
+                        speakText(`${t.speech.nextExercise}${exercises[nextExerciseIndex]}`);
                     } else if (currentSet < TOTAL_SETS) {
-                        speakText(`Set ${currentSet} complete. Starting set ${currentSet + 1}: ${exercises[0]}`);
+                        const setCompleteMsg = t.speech.setComplete.replace('{0}', currentSet).replace('{1}', currentSet + 1);
+                        speakText(`${setCompleteMsg}${exercises[0]}`);
                     }
                 }, 200);
             }
@@ -1031,7 +1132,8 @@
             isRunning = false;
             isComplete = true;
             playBeep(1200, 500, 0.8);
-            speakText('Workout complete! Great job!');
+            const t = translations[currentLanguage];
+            speakText(t.speech.workoutComplete);
             updateDisplay();
         }
 
@@ -1039,14 +1141,21 @@
             soundEnabled = !soundEnabled;
             const btn = document.getElementById('soundBtn');
             btn.classList.toggle('active', soundEnabled);
-            btn.innerHTML = soundEnabled ? '🔊 Sound' : '🔇 Sound';
+            updateAllTexts();
         }
 
         function toggleSpeech() {
             speechEnabled = !speechEnabled;
             const btn = document.getElementById('speechBtn');
             btn.classList.toggle('active', speechEnabled);
-            btn.innerHTML = speechEnabled ? '🗣️ Voice' : '🤐 Voice';
+            updateAllTexts();
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'ja' : 'en';
+            exercises = [...translations[currentLanguage].exercises];
+            updateAllTexts();
+            updateDisplay();
         }
 
         function toggleExerciseList() {
@@ -1101,7 +1210,8 @@
         }
 
         function deleteExercise(index) {
-            if (exercises.length > 1 && confirm('Delete this exercise?')) {
+            const t = translations[currentLanguage];
+            if (exercises.length > 1 && confirm(t.alerts.deleteExercise)) {
                 exercises.splice(index, 1);
                 
                 // Adjust current exercise index if needed
@@ -1130,15 +1240,51 @@
             }
         }
 
+        function updateAllTexts() {
+            const t = translations[currentLanguage];
+            
+            // Update header
+            document.querySelector('.header h1').textContent = t.title;
+            document.querySelector('.header p').textContent = t.subtitle;
+            
+            // Update completion card
+            document.querySelector('.completion-title').textContent = t.workoutComplete;
+            document.querySelector('.completion-text').textContent = t.workoutCompleteText;
+            document.querySelector('.completion-content button').innerHTML = `↻ ${t.startNewWorkout}`;
+            
+            // Update next exercise label
+            document.querySelector('#nextExercise > div:first-child').textContent = t.nextExercise;
+            
+            // Update overall progress label
+            document.querySelector('.timer-display > div:last-child').textContent = t.overallProgress;
+            
+            // Update settings buttons
+            const soundBtn = document.getElementById('soundBtn');
+            soundBtn.innerHTML = soundEnabled ? t.sound : t.sound.replace('🔊', '🔇');
+            
+            const speechBtn = document.getElementById('speechBtn');
+            speechBtn.innerHTML = speechEnabled ? t.voice : t.voice.replace('🗣️', '🤐');
+            
+            document.querySelector('button[onclick="testSpeech()"]').innerHTML = t.testVoice;
+            document.querySelector('button[onclick="toggleExerciseList()"]').innerHTML = t.editExercises;
+            document.querySelector('button[onclick="toggleLanguage()"]').innerHTML = t.language;
+            
+            // Update exercise list
+            document.querySelector('#exerciseListCard h3').textContent = t.exerciseList;
+            document.getElementById('newExerciseInput').placeholder = t.addNewExercise;
+        }
+
         // Test speech function
         function testSpeech() {
+            const t = translations[currentLanguage];
+            
             if (!speechEnabled) {
-                alert('Voice announcements are disabled. Please enable them first.');
+                alert(t.alerts.voiceDisabled);
                 return;
             }
             
             if (!window.speechSynthesis) {
-                alert('Speech synthesis is not supported on this device/browser.');
+                alert(t.alerts.speechNotSupported);
                 return;
             }
             
@@ -1146,7 +1292,7 @@
             initializeSpeechForMobile();
             
             // Test with a clear message
-            speakText('Voice test: Next exercise is squats');
+            speakText(t.speech.voiceTest);
             
             // Visual feedback
             const btn = event.target;
@@ -1162,6 +1308,7 @@
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
+            updateAllTexts();
             updateDisplay();
             renderExerciseList();
             initSpeechSynthesis();
